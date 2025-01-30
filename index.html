@@ -97,7 +97,7 @@
         <script>
             // Replace these with your Auth0 credentials
             const auth0Config = {
-                domain: "dev-8lis8pkmcg2s1685.us.auth0.com", // e.g. "dev-xyz123.us.auth0.com"
+                domain: "dev-8lis8pkmcg2s1685.us.auth0.com",
                 clientId: "blI7jcexpaGKs0Hu0oz5urmI0n5aWQCQ",
                 authorizationParams: {
                     redirect_uri: "https://userhub-mock-app.deno.dev",
@@ -166,9 +166,9 @@
 
             async function openPortal() {
                 const user = await auth0Client.getUser();
-                // Redirect to UserHub Portal
-                window.location.href =
+                const portalUrl =
                     "https://dev-mgwzgp9dv1y9ba.userhub.app/";
+                window.location.href = `/userhub?portalUrl=${encodeURIComponent(portalUrl)}`;
             }
             // Initialize when page loads
             window.onload = initAuth0;
