@@ -8,17 +8,24 @@
         />
         <title>MockApp</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
     </head>
     <body class="bg-gray-50">
         <div class="min-h-screen flex flex-col">
             <!-- Header -->
             <header class="bg-white shadow-sm">
                 <div
-                    class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8"
+                    class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center"
                 >
                     <h1 class="text-lg font-semibold text-gray-900">
                         MockApp
                     </h1>
+                    <button
+                        id="signInButton"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+                    >
+                        Sign In
+                    </button>
                 </div>
             </header>
 
@@ -27,6 +34,7 @@
                 <div
                     class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8"
                 >
+                    <!-- Public content -->
                     <div class="text-center">
                         <h2
                             class="text-3xl font-bold text-gray-900 sm:text-4xl"
@@ -37,12 +45,39 @@
                             A demo application for UserHub integration
                             testing
                         </p>
-                        <div class="mt-8">
-                            <button
-                                class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
-                            >
-                                Sign In
-                            </button>
+                    </div>
+
+                    <!-- Authenticated content -->
+                    <div
+                        id="authenticatedContent"
+                        style="display: none"
+                        class="mt-8"
+                    >
+                        <div class="bg-white shadow sm:rounded-lg">
+                            <div class="px-4 py-5 sm:p-6">
+                                <h3
+                                    class="text-lg font-medium leading-6 text-gray-900"
+                                >
+                                    Account Management
+                                </h3>
+                                <div
+                                    class="mt-2 max-w-xl text-sm text-gray-500"
+                                >
+                                    <p>
+                                        Manage your subscription and
+                                        team settings
+                                    </p>
+                                </div>
+                                <div class="mt-5">
+                                    <button
+                                        id="portalButton"
+                                        onclick="openPortal()"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    >
+                                        Manage Subscription
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -59,5 +94,84 @@
                 </div>
             </footer>
         </div>
+        <script>
+            // Replace these with your Auth0 credentials
+            const auth0Config = {
+                domain: "dev-8lis8pkmcg2s1685.us.auth0.com", // e.g. "dev-xyz123.us.auth0.com"
+                clientId: "blI7jcexpaGKs0Hu0oz5urmI0n5aWQCQ",
+                authorizationParams: {
+                    redirect_uri: "userhub-mock-app.deno.dev",
+                },
+            };
+
+            let auth0Client = null;
+
+            // Initialize Auth0 client
+            async function initAuth0() {
+                auth0Client =
+                    await auth0.createAuth0Client(auth0Config);
+
+                // Check for callback
+                if (window.location.search.includes("code=")) {
+                    await auth0Client.handleRedirectCallback();
+                    // Clean up URL
+                    window.history.replaceState(
+                        {},
+                        document.title,
+                        window.location.pathname,
+                    );
+                }
+
+                updateUI();
+            }
+
+            // Update UI based on authentication state
+            async function updateUI() {
+                const isAuthenticated =
+                    await auth0Client.isAuthenticated();
+                const signInButton =
+                    document.getElementById("signInButton");
+
+                if (isAuthenticated) {
+                    const user = await auth0Client.getUser();
+                    signInButton.textContent = `Sign Out (${user.email})`;
+                    signInButton.onclick = logout;
+
+                    // Show authenticated content
+                    document.getElementById(
+                        "authenticatedContent",
+                    ).style.display = "block";
+                } else {
+                    signInButton.textContent = "Sign In";
+                    signInButton.onclick = login;
+
+                    // Hide authenticated content
+                    document.getElementById(
+                        "authenticatedContent",
+                    ).style.display = "none";
+                }
+            }
+
+            // Handle login
+            async function login() {
+                await auth0Client.loginWithRedirect();
+            }
+
+            // Handle logout
+            async function logout() {
+                auth0Client.logout({
+                    returnTo: window.location.origin,
+                });
+            }
+
+            async function openPortal() {
+                const user = await auth0Client.getUser();
+                // Redirect to UserHub Portal
+                window.location.href =
+                    "https://dev-mgwzgp9dv1y9ba.userhub.app/";
+            }
+            // Initialize when page loads
+            window.onload = initAuth0;
+        </script>
     </body>
 </html>
