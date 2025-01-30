@@ -112,17 +112,30 @@
                     await auth0.createAuth0Client(auth0Config);
 
                 // Check for callback
-                if (window.location.search.includes("code=")) {
-                    await auth0Client.handleRedirectCallback();
-                    // Clean up URL
-                    window.history.replaceState(
-                        {},
-                        document.title,
-                        window.location.pathname,
-                    );
+                if (
+                    window.location.search.includes("code=") &&
+                    window.location.search.includes("state=")
+                ) {
+                    try {
+                        // Handle the redirect and get the user
+                        await auth0Client.handleRedirectCallback();
+                        // Clean up URL
+                        window.history.replaceState(
+                            {},
+                            document.title,
+                            window.location.origin,
+                        );
+                        // Update UI with new state
+                        await updateUI();
+                    } catch (error) {
+                        console.error(
+                            "Error handling redirect:",
+                            error,
+                        );
+                    }
+                } else {
+                    await updateUI();
                 }
-
-                updateUI();
             }
 
             // Update UI based on authentication state
@@ -165,12 +178,18 @@
             }
 
             async function openPortal() {
-                const user = await auth0Client.getUser();
-                // Log the user object to see what we're working with
-                console.log("User:", user);
-                // Direct redirect to UserHub portal with full URL
-                window.location.href =
-                    "https://dev-mgwzgp9dv1y9ba.userhub.app";
+                try {
+                    const user = await auth0Client.getUser();
+                    console.log("User object:", user);
+
+                    // Direct UserHub portal redirect
+                    const portalUrl =
+                        "https://dev-mgwzgp9dv1y9ba.userhub.app";
+                    console.log("Redirecting to:", portalUrl);
+                    window.location.href = portalUrl;
+                } catch (error) {
+                    console.error("Portal redirect error:", error);
+                }
             }
             // Initialize when page loads
             window.onload = initAuth0;
