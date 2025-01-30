@@ -166,9 +166,11 @@
 
             async function openPortal() {
                 const user = await auth0Client.getUser();
-                const portalUrl =
-                    "https://dev-mgwzgp9dv1y9ba.userhub.app/";
-                window.location.href = `/userhub?portalUrl=${encodeURIComponent(portalUrl)}`;
+                // Log the user object to see what we're working with
+                console.log("User:", user);
+                // Direct redirect to UserHub portal with full URL
+                window.location.href =
+                    "https://dev-mgwzgp9dv1y9ba.userhub.app";
             }
             // Initialize when page loads
             window.onload = initAuth0;
