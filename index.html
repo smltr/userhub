@@ -196,21 +196,16 @@
                     const user = await auth0Client.getUser();
                     console.log("User object:", user);
 
-                    // Create a portal session first
+                    // Call our backend endpoint instead of UserHub directly
                     const response = await fetch(
-                        "https://api.userhub.com/public/v1/portal/session",
+                        "/create-portal-session",
                         {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                // You'll need to add your UserHub API key here
-                                Authorization:
-                                    "Bearer pk_mgwzgp9dv1y9ba2PFX9SmsNVQhZ3uqa5XAspzT",
                             },
                             body: JSON.stringify({
-                                user_id: `${user.sub}@aCsThIzcTD4lBidwmoij1ZJnVSKwnFHR`,
-                                portal_url:
-                                    "https://dev-mgwzgp9dv1y9ba.userhub.app",
+                                userId: user.sub,
                             }),
                         },
                     );
