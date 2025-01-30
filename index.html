@@ -108,73 +108,87 @@
 
             // Initialize Auth0 client
             async function initAuth0() {
-                auth0Client =
-                    await auth0.createAuth0Client(auth0Config);
+                try {
+                    auth0Client =
+                        await auth0.createAuth0Client(auth0Config);
 
-                // Check for callback
-                if (
-                    window.location.search.includes("code=") &&
-                    window.location.search.includes("state=")
-                ) {
-                    try {
-                        // Handle the redirect and get the user
-                        await auth0Client.handleRedirectCallback();
-                        // Clean up URL
-                        window.history.replaceState(
-                            {},
-                            document.title,
-                            window.location.origin,
-                        );
-                        // Update UI with new state
+                    // Check if already authenticated first
+                    const isAuthenticated =
+                        await auth0Client.isAuthenticated();
+                    console.log("Is authenticated:", isAuthenticated);
+
+                    if (isAuthenticated) {
                         await updateUI();
-                    } catch (error) {
-                        console.error(
-                            "Error handling redirect:",
-                            error,
-                        );
+                        return;
                     }
-                } else {
+
+                    // Handle redirect callback
+                    if (
+                        window.location.search.includes("code=") &&
+                        window.location.search.includes("state=")
+                    ) {
+                        try {
+                            await auth0Client.handleRedirectCallback();
+                            window.history.replaceState(
+                                {},
+                                document.title,
+                                window.location.origin,
+                            );
+                        } catch (error) {
+                            console.error(
+                                "Error handling redirect:",
+                                error,
+                            );
+                        }
+                    }
+
                     await updateUI();
+                } catch (error) {
+                    console.error("Init error:", error);
                 }
             }
 
-            // Update UI based on authentication state
             async function updateUI() {
-                const isAuthenticated =
-                    await auth0Client.isAuthenticated();
-                const signInButton =
-                    document.getElementById("signInButton");
+                try {
+                    const isAuthenticated =
+                        await auth0Client.isAuthenticated();
+                    const signInButton =
+                        document.getElementById("signInButton");
+                    const authenticatedContent =
+                        document.getElementById(
+                            "authenticatedContent",
+                        );
 
-                if (isAuthenticated) {
-                    const user = await auth0Client.getUser();
-                    signInButton.textContent = `Sign Out (${user.email})`;
-                    signInButton.onclick = logout;
+                    if (isAuthenticated) {
+                        const user = await auth0Client.getUser();
+                        console.log("User:", user);
+                        signInButton.textContent = `Sign Out (${user.email || user.name})`;
+                        signInButton.onclick = logout;
+                        authenticatedContent.style.display = "block";
+                    } else {
+                        signInButton.textContent = "Sign In";
+                        signInButton.onclick = login;
+                        authenticatedContent.style.display = "none";
+                    }
+                } catch (error) {
+                    console.error("Update UI error:", error);
+                }
+            }
 
-                    // Show authenticated content
-                    document.getElementById(
-                        "authenticatedContent",
-                    ).style.display = "block";
-                } else {
-                    signInButton.textContent = "Sign In";
-                    signInButton.onclick = login;
-
-                    // Hide authenticated content
-                    document.getElementById(
-                        "authenticatedContent",
-                    ).style.display = "none";
+            async function logout() {
+                try {
+                    await auth0Client.logout({
+                        returnTo: window.location.origin,
+                        clientId: auth0Config.clientId,
+                    });
+                } catch (error) {
+                    console.error("Logout error:", error);
                 }
             }
 
             // Handle login
             async function login() {
                 await auth0Client.loginWithRedirect();
-            }
-
-            // Handle logout
-            async function logout() {
-                auth0Client.logout({
-                    returnTo: window.location.origin,
-                });
             }
 
             async function openPortal() {
