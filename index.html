@@ -196,7 +196,6 @@
                     const user = await auth0Client.getUser();
                     console.log("User object:", user);
 
-                    // Call our backend endpoint instead of UserHub directly
                     const response = await fetch(
                         "/create-portal-session",
                         {
@@ -210,17 +209,36 @@
                         },
                     );
 
+                    const responseData = await response.text();
+                    console.log(
+                        "Response from server:",
+                        responseData,
+                    );
+
                     if (!response.ok) {
                         throw new Error(
-                            `Failed to create portal session: ${response.statusText}`,
+                            `Failed to create portal session: ${response.status} - ${responseData}`,
                         );
                     }
 
-                    const session = await response.json();
-                    window.location.href = session.redirect_url;
+                    try {
+                        const session = JSON.parse(responseData);
+                        if (session.redirect_url) {
+                            window.location.href =
+                                session.redirect_url;
+                        } else {
+                            throw new Error(
+                                "No redirect URL in response",
+                            );
+                        }
+                    } catch (e) {
+                        throw new Error(
+                            `Invalid response format: ${responseData}`,
+                        );
+                    }
                 } catch (error) {
                     console.error("Portal redirect error:", error);
-                    alert("Failed to open portal. Please try again.");
+                    alert(`Failed to open portal: ${error.message}`);
                 }
             }
             // Initialize when page loads
